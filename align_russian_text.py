@@ -47,6 +47,8 @@ CONSONANTS = "бвгджзклмнпрстфхцчшщ"
 SPEC_LETTERS = "ьъй"
 ALPHABET = "".join(x for x in (x for x in (VOWELS, CONSONANTS, SPEC_LETTERS)))
 ALPHABET = f"{ALPHABET}{''.join(x.upper() for x in ALPHABET)}"
+SET_VOWELS = set(VOWELS)
+SET_CONSONANT = set(CONSONANTS)
 
 MIN_SPACE = 1
 MIN_TERM_SIZE = 20
@@ -57,7 +59,8 @@ DEFAULT_PIVOT = -1
 # all gramatic rules taken from https://rosuchebnik.ru/material/pravila-perenosa-slov-v-russkom-yazyke-nachalka/
 def vowels_and_consonats(left: List[str], right: List[str]):
     for part in (left, right):
-        check_res = VOWELS in part and CONSONANTS in part
+        set_part = set(part)
+        check_res = SET_VOWELS.intersection(set_part) and SET_CONSONANT.intersection(set_part)
         if not check_res:
             return False
 
@@ -66,6 +69,9 @@ def vowels_and_consonats(left: List[str], right: List[str]):
 
 def special_symbols(left: List[str], right: List[str]):
     if right[0].lower() == "ы":
+        return False
+
+    if right[0].lower() in SPEC_LETTERS:
         return False
 
     return True
