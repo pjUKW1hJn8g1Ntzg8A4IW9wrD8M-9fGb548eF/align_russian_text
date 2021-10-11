@@ -1,7 +1,8 @@
 
+from collections import deque
 from align_russian_text import TextHandler, WordHandler
 from align_russian_text import GRAMMATICAL_RULES, ALPHABET, VOWELS, CONSONANTS
-from align_russian_text import vowels_and_consonats, special_symbols
+from align_russian_text import vowels_and_consonats, special_symbols, common_symbols
 
 
 class TestGrammaticRules:
@@ -24,6 +25,23 @@ class TestGrammaticRules:
         assert special_symbols(['о', 'б'], ['ъ', 'ё', 'м']) is False
         assert special_symbols(['о', 'б', 'ъ'], ['ё', 'м']) is True
 
+    def test_common_symbols(self):
+        assert common_symbols(['п', 'р', 'о', 'п', 'е', 'л'], ['л', 'е', 'р']) is True
+        assert common_symbols(['п', 'р', 'о', 'п', 'е'], ['л', 'л', 'е', 'р']) is False
+        assert common_symbols(['п', 'р', 'о', 'п'], ['е', 'л', 'л', 'е', 'р']) is False
+        assert common_symbols(['п', 'р', 'о'], ['п', 'е', 'л', 'л', 'е', 'р']) is True
+
+        assert common_symbols(['п', 'р', 'о', 'с'], ['м', 'о', 'т', 'р']) is True
+
 
 class TestWordHandler:
-    pass
+    def test_calc_word_begin(self):
+        w = WordHandler([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), 3)
+
+        assert w.word_begin == -1
+        w._calc_word_begin()
+
+        assert w.word_begin == 2
+
+    def test_move_whole_word(self):
+        pass
