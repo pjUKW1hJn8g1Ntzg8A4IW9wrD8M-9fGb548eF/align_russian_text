@@ -12,7 +12,7 @@
 
 
 import sys
-from typing import Deque, List, Optional
+from typing import Deque, List
 from collections import deque
 from dataclasses import dataclass
 from functools import reduce
@@ -77,10 +77,34 @@ def special_symbols(left: List[str], right: List[str]):
     return True
 
 
+def common_symbols(left: List[str], right: List[str]):
+    # двойная согласная. Разрешено. Например, пропел-лер
+    if left[-1] in CONSONANTS and left[-1] == right[0]:
+        return True
+
+    # две согласных подряд. Разрешено. Например, прос-мотр
+    if left[-1] in CONSONANTS and right[0] in CONSONANTS:
+        return True
+
+    # двойная согласная в одной из частей. Запрещено. Например, су-ббота
+    if left[-1] in CONSONANTS and left[-2] == left[-1]:
+        return False
+
+    if right[0] in CONSONANTS and right[1] == right[0]:
+        return False
+
+    # нельзя отрывать гласную от согласной. Например, пол-ено
+    if left[-1] in CONSONANTS and right[0] in VOWELS:
+        return False
+
+    return True
+
+
 GRAMMATICAL_RULES = {
     f"длина слова >= {MIN_WORD_LEN}": (lambda left, right: len(left + right) >= MIN_WORD_LEN),
     "гласные и согласные в обеих частях слова": vowels_and_consonats,
-    "мягкий, твёрдый и 'й краткая'": special_symbols
+    "мягкий, твёрдый и 'й краткая'": special_symbols,
+    "общие правила": common_symbols
 }
 
 
@@ -101,7 +125,7 @@ class WordHandler:
 
             can_be_transitted = reduce(
                 (lambda res, rule: res and rule(left, right)),
-                GRAMMATICAL_RULES.values, initial=True)
+                GRAMMATICAL_RULES.values(), True)
 
             if can_be_transitted:
                 break
@@ -116,7 +140,7 @@ class WordHandler:
     def _calc_word_begin(self):
         word_begin = -1
 
-        for i in range(self.pivot, 0, -1):
+        for i in range(self.pivot, -1, -1):
             if self.buffer[i] not in ALPHABET:
                 word_begin = i + 1
                 break
@@ -124,12 +148,16 @@ class WordHandler:
         assert word_begin != -1
         self.word_begin = word_begin
 
+    def _append_tmp_buffer(self, data: List[str]):
+        data.reverse()
+        self.tmp_buf.extendleft(data)
+
     def _move_whole_word(self):
-        self.tmp_buf.extendleft(self.buffer[self.word_begin:])
+        self._append_tmp_buffer(self.buffer[self.word_begin:])
         self.buffer[self.word_begin:] = []
 
     def _transit_word(self):
-        self.tmp_buf.extendleft(self.buffer[self.pivot:])
+        self._append_tmp_buffer(self.buffer[self.pivot:])
         self.buffer[self.pivot:] = []
         self.buffer.append("-")
 

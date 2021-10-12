@@ -36,7 +36,7 @@ class TestGrammaticRules:
 
 class TestWordHandler:
     def test_calc_word_begin(self):
-        w = WordHandler([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), 3)
+        w = WordHandler([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), pivot=3)
 
         assert w.word_begin == -1
         w._calc_word_begin()
@@ -44,4 +44,35 @@ class TestWordHandler:
         assert w.word_begin == 2
 
     def test_move_whole_word(self):
-        pass
+        buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+        tmp_buf = deque()
+        w = WordHandler(buffer, tmp_buf, pivot=3)
+        w._calc_word_begin()
+
+        assert len(w.tmp_buf) == 0
+
+        w._move_whole_word()
+        assert buffer == [',', ' ']
+        assert list(tmp_buf) == ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+
+    def test_transit_word(self):
+        buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+        tmp_buf = deque()
+        tmp_buf.append(".")
+
+        w = WordHandler(buffer, tmp_buf, pivot=8)
+        w._calc_word_begin()
+        w._transit_word()
+
+        assert buffer == [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', '-']
+        assert list(tmp_buf) == ['л', 'е', 'р', '.']
+
+    def test_handle(self):
+        buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+        tmp_buf = deque([';'])
+
+        w = WordHandler(buffer, tmp_buf, pivot=9)
+        w.handle()
+
+        assert buffer == [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', '-']
+        assert list(tmp_buf) == ['л', 'е', 'р', ';']
