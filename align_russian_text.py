@@ -208,6 +208,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     term_size = args.term_size if args.term_size else DEFAULT_TERM_SIZE
+    if term_size < MIN_TERM_SIZE:
+        raise Exception(f"The term size has to be at least {MIN_TERM_SIZE}")
 
     h = TextHandler(term_size)
     for line in sys.stdin:
