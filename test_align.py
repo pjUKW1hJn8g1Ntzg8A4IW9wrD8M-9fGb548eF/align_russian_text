@@ -80,19 +80,17 @@ class TestWordHandler:
 
 class TestTextHandler:
     def test_create(self):
-        txt_len = 100
         term_size = 45
-        h = TextHandler(txt_len=txt_len, term_size=term_size)
+        h = TextHandler(term_size=term_size)
 
         assert h.term_size == term_size
-        assert h.txt_len == txt_len
         assert h.buffer == []
         assert isinstance(h.tmp_buf, deque)
         assert h.pivot == DEFAULT_PIVOT
         assert h.need_to_write is False
 
     def test_property(self):
-        h = TextHandler(txt_len=100, term_size=10)
+        h = TextHandler(term_size=10)
         h.buffer.extend(['э', 'ю', 'я', 'к', 'у', 'ц'])
         assert h.enough_space is True
 
@@ -103,7 +101,7 @@ class TestTextHandler:
         assert h.enough_space is False
 
     def test_clean_up(self):
-        h = TextHandler(txt_len=100, term_size=10)
+        h = TextHandler(term_size=10)
         h.buffer.extend(['э', 'ю', 'я', 'к', 'у', 'ц'])
         h.tmp_buf.append('у')
         h.pivot = 4
@@ -124,7 +122,7 @@ class TestTextHandler:
 
     class TestDecideWhatToDo:
         def test_char_is_letter(self):
-            h = TextHandler(txt_len=100, term_size=10)
+            h = TextHandler(term_size=10)
             h.buffer.extend([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л'])
 
             h._decide_what_to_do('е')
@@ -146,7 +144,7 @@ class TestTextHandler:
             assert list(h.tmp_buf) == ['л', 'е', 'р', ' ']
 
         def test_char_is_not_letter(self):
-            h = TextHandler(txt_len=100, term_size=10)
+            h = TextHandler(term_size=10)
             h.buffer.extend(['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'])
 
             h._decide_what_to_do(',')
@@ -156,7 +154,7 @@ class TestTextHandler:
             assert len(h.tmp_buf) == 0
 
             # test when last char is a space symbol
-            h = TextHandler(txt_len=100, term_size=10)
+            h = TextHandler(term_size=10)
             h.buffer.extend(['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'])
             h._decide_what_to_do('\n')
             assert h.need_to_write is True

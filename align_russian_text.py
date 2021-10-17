@@ -16,30 +16,7 @@ from typing import Deque, List
 from collections import deque
 from dataclasses import dataclass
 from functools import reduce
-
-txt = """Я взглянул окрест меня — душа моя страданиями человечества уязвленна стала.
-Обратил взоры мои во внутренность мою — и узрел,
-что бедствия человека происходят от человека,
-и часто от того только, что он взирает непрямо на окружающие его предметы.
-Ужели, вещал я сам себе, природа толико скупа была к своим чадам,
-что от блудящего невинно сокрыла истину навеки?
-Ужели сия грозная мачеха произвела нас для того,
-чтоб чувствовали мы бедствия, а блаженство николи?
-Разум мой вострепетал от сея мысли, и сердце мое далеко ее от себя оттолкнуло.
-Я человеку нашел утешителя в нем самом.
-«Отыми завесу с очей природного чувствования — и блажен буду».
-Сей глас природы раздавался громко в сложении моем.
-Воспрянул я от уныния моего, в которое повергли меня чувствительность и сострадание;
-я ощутил в себе довольно сил, чтобы противиться заблуждению;
-и — веселие неизреченное! — я почувствовал,
-что возможно всякому соучастником быть во благодействии себе подобных.
-Се мысль, побудившая меня начертать, что читать будешь.
-Но если, говорил я сам себе, я найду кого-либо, кто намерение мое одобрит;
-кто ради благой цели не опорочит неудачное изображение мысли;
-кто состраждет со мною над бедствиями собратии своей;
-кто в шествии моем меня подкрепит, — не сугубый ли плод произойдет от подъятого мною труда?..
-Почто, почто мне искать далеко кого-либо? Мой друг!
-ты близ моего сердца живешь — и имя твое да озарит сие начало."""
+import argparse
 
 
 VOWELS = "аиеёоуыэюя"
@@ -163,8 +140,7 @@ class WordHandler:
 
 
 class TextHandler:
-    def __init__(self, txt_len: int, term_size: int):
-        self.txt_len = txt_len
+    def __init__(self, term_size: int):
         self.term_size = term_size
         self.buffer = []
         self.tmp_buf = deque()
@@ -177,14 +153,6 @@ class TextHandler:
 
     def _write(self):
         print("".join(self.buffer))
-
-    def _got_eof(self, ch: str):
-        if self.enough_space:
-            self.buffer.append(ch)
-            self._write()
-            return
-
-        # TODO: finish here
 
     def _clean_up(self):
         self.buffer[:] = []
@@ -211,10 +179,7 @@ class TextHandler:
         WordHandler(self.buffer, self.tmp_buf, self.pivot).handle()
         self.need_to_write = True
 
-    def handle(self, i: int, ch: str):
-        if i == self.txt_len - 1:
-            return self._got_eof(ch)
-
+    def _handle_char(self, ch):
         if self.enough_space:
             self.buffer.append(ch)
             return
@@ -225,15 +190,30 @@ class TextHandler:
             self._write()
             self._clean_up()
 
+    def work(self, ch: str):
+        self._handle_char(ch)
+
+    def eof(self):
+        if self.buffer:
+            if self.enough_space:
+                self._write()
+                return
+
+            self._handle_char('')
+
 
 if __name__ == "__main__":
-    term_size = 50
-    if len(txt) <= term_size:
-        print(txt)
-        sys.exit()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--term_size', type=int, help="Terminal size")
+    args = parser.parse_args()
 
-    h = TextHandler(len(txt), term_size)
-    for i, ch in enumerate(txt):
-        if ch == "\n":
-            ch = " "
-        h.handle(i, ch)
+    term_size = args.term_size if args.term_size else DEFAULT_TERM_SIZE
+
+    h = TextHandler(term_size)
+    for line in sys.stdin:
+        for ch in line:
+            if ch == "\n":
+                ch = " "
+            h.work(ch)
+
+    h.eof()
