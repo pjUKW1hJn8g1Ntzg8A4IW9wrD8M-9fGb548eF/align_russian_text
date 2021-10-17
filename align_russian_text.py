@@ -194,12 +194,14 @@ class TextHandler:
         self._handle_char(ch)
 
     def eof(self):
-        if self.buffer:
-            if self.enough_space:
-                self._write()
-                return
+        if not self.buffer:
+            return
 
-            self._handle_char('')
+        if self.enough_space:
+            self._write()
+            return
+
+        self._handle_char('')
 
 
 if __name__ == "__main__":
