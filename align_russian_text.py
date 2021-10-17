@@ -19,11 +19,10 @@ from functools import reduce
 import argparse
 
 
-VOWELS = "аиеёоуыэюя"
-CONSONANTS = "бвгджзклмнпрстфхцчшщ"
-SPEC_LETTERS = "ьъй"
+VOWELS = "аиеёоуыэюяАИЕЁОУЫЭЮЯ"
+CONSONANTS = "бвгджзклмнпрстфхцчшщБВГДЖЗКЛМНПРСТФХЦЧШЩ"
+SPEC_LETTERS = "ьъйЬЪЙ"
 ALPHABET = "".join(x for x in (x for x in (VOWELS, CONSONANTS, SPEC_LETTERS)))
-ALPHABET = f"{ALPHABET}{''.join(x.upper() for x in ALPHABET)}"
 SET_VOWELS = set(VOWELS)
 SET_CONSONANT = set(CONSONANTS)
 
