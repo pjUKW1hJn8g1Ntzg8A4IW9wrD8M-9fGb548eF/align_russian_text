@@ -50,10 +50,10 @@ ALPHABET = f"{ALPHABET}{''.join(x.upper() for x in ALPHABET)}"
 SET_VOWELS = set(VOWELS)
 SET_CONSONANT = set(CONSONANTS)
 
-MIN_SPACE = 1
 MIN_TERM_SIZE = 20
 MIN_WORD_LEN = 4
 DEFAULT_PIVOT = -1
+DEFAULT_TERM_SIZE = 80
 
 
 # all gramatic rules taken from https://rosuchebnik.ru/material/pravila-perenosa-slov-v-russkom-yazyke-nachalka/
@@ -119,7 +119,7 @@ class WordHandler:
         self._calc_word_begin()
 
         can_be_transitted = False
-        while self.pivot - self.word_begin > 1:
+        while (self.pivot - self.word_begin) > 1:
             left = self.buffer[self.word_begin:self.pivot]
             right = self.buffer[self.pivot:]
 
@@ -184,7 +184,7 @@ class TextHandler:
             self._write()
             return
 
-        # ..
+        # TODO: finish here
 
     def _clean_up(self):
         self.buffer[:] = []
@@ -227,7 +227,7 @@ class TextHandler:
 
 
 if __name__ == "__main__":
-    term_size = 40
+    term_size = 50
     if len(txt) <= term_size:
         print(txt)
         sys.exit()

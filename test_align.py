@@ -1,6 +1,6 @@
 
 from collections import deque
-from align_russian_text import TextHandler, WordHandler
+from align_russian_text import TextHandler, WordHandler, DEFAULT_PIVOT
 from align_russian_text import GRAMMATICAL_RULES, ALPHABET, VOWELS, CONSONANTS
 from align_russian_text import vowels_and_consonats, special_symbols, common_symbols
 
@@ -76,3 +76,93 @@ class TestWordHandler:
 
         assert buffer == [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', '-']
         assert list(tmp_buf) == ['л', 'е', 'р', ';']
+
+
+class TestTextHandler:
+    def test_create(self):
+        txt_len = 100
+        term_size = 45
+        h = TextHandler(txt_len=txt_len, term_size=term_size)
+
+        assert h.term_size == term_size
+        assert h.txt_len == txt_len
+        assert h.buffer == []
+        assert isinstance(h.tmp_buf, deque)
+        assert h.pivot == DEFAULT_PIVOT
+        assert h.need_to_write is False
+
+    def test_property(self):
+        h = TextHandler(txt_len=100, term_size=10)
+        h.buffer.extend(['э', 'ю', 'я', 'к', 'у', 'ц'])
+        assert h.enough_space is True
+
+        h.buffer.extend(['э', 'ю', 'у'])
+        assert h.enough_space is True
+
+        h.buffer.append('м')
+        assert h.enough_space is False
+
+    def test_clean_up(self):
+        h = TextHandler(txt_len=100, term_size=10)
+        h.buffer.extend(['э', 'ю', 'я', 'к', 'у', 'ц'])
+        h.tmp_buf.append('у')
+        h.pivot = 4
+        h.need_to_write = True
+
+        buf = h.buffer
+
+        h._clean_up()
+
+        assert buf is h.buffer
+        assert len(h.tmp_buf) == 0
+        assert h.buffer == ['у']
+        assert h.pivot == DEFAULT_PIVOT
+        assert h.need_to_write is False
+
+    def test_got_eof(self):
+        pass
+
+    class TestDecideWhatToDo:
+        def test_char_is_letter(self):
+            h = TextHandler(txt_len=100, term_size=10)
+            h.buffer.extend([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л'])
+
+            h._decide_what_to_do('е')
+            assert h.need_to_write is False
+            assert h.pivot == 9
+            assert h.buffer[-1] == 'е'
+            assert len(h.tmp_buf) == 0
+
+            h._decide_what_to_do('р')
+            assert h.need_to_write is False
+            assert h.pivot == 9
+            assert h.buffer[-1] == 'р'
+            assert len(h.tmp_buf) == 0
+
+            h._decide_what_to_do(' ')
+            assert h.need_to_write is True
+            assert h.pivot == 9
+            assert h.buffer[-1] == '-'
+            assert list(h.tmp_buf) == ['л', 'е', 'р', ' ']
+
+        def test_char_is_not_letter(self):
+            h = TextHandler(txt_len=100, term_size=10)
+            h.buffer.extend(['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'])
+
+            h._decide_what_to_do(',')
+            assert h.need_to_write is True
+            assert h.pivot == DEFAULT_PIVOT
+            assert h.buffer[-1] == ','
+            assert len(h.tmp_buf) == 0
+
+            # test when last char is a space symbol
+            h = TextHandler(txt_len=100, term_size=10)
+            h.buffer.extend(['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'])
+            h._decide_what_to_do('\n')
+            assert h.need_to_write is True
+            assert h.pivot == DEFAULT_PIVOT
+            assert h.buffer[-1] == 'р'
+            assert len(h.tmp_buf) == 0
+
+    def test_handle(self):
+        pass
