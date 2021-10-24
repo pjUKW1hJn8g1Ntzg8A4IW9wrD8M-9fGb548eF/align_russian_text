@@ -1,6 +1,6 @@
 
 from collections import deque
-from align_russian_text import TextHandler, WordHandler, DEFAULT_PIVOT
+from align_russian_text import TextHandler, Hyphenator, DEFAULT_PIVOT
 from align_russian_text import GRAMMATICAL_RULES, ALPHABET, VOWELS, CONSONANTS
 from align_russian_text import vowels_and_consonats, special_symbols, common_symbols
 
@@ -34,35 +34,35 @@ class TestGrammaticRules:
         assert common_symbols(['п', 'р', 'о', 'с'], ['м', 'о', 'т', 'р']) is True
 
 
-class TestWordHandler:
+class TestHyphenator:
     def test_calc_word_begin(self):
-        w = WordHandler([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), pivot=3)
+        hpn = Hyphenator([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), pivot=3)
 
-        assert w.word_begin == -1
-        w._calc_word_begin()
+        assert hpn.word_begin == -1
+        hpn._calc_word_begin()
 
-        assert w.word_begin == 2
+        assert hpn.word_begin == 2
 
     def test_move_whole_word(self):
         buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
         tmp_buf = deque()
-        w = WordHandler(buffer, tmp_buf, pivot=3)
-        w._calc_word_begin()
+        hpn = Hyphenator(buffer, tmp_buf, pivot=3)
+        hpn._calc_word_begin()
 
-        assert len(w.tmp_buf) == 0
+        assert len(hpn.tmp_buf) == 0
 
-        w._move_whole_word()
+        hpn._move_whole_word()
         assert buffer == [',', ' ']
         assert list(tmp_buf) == ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
 
-    def test_transit_word(self):
+    def test_hyphenate(self):
         buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
         tmp_buf = deque()
         tmp_buf.append(".")
 
-        w = WordHandler(buffer, tmp_buf, pivot=8)
-        w._calc_word_begin()
-        w._transit_word()
+        hpn = Hyphenator(buffer, tmp_buf, pivot=8)
+        hpn._calc_word_begin()
+        hpn._hyphenate()
 
         assert buffer == [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', '-']
         assert list(tmp_buf) == ['л', 'е', 'р', '.']
@@ -71,8 +71,8 @@ class TestWordHandler:
         buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
         tmp_buf = deque([';'])
 
-        w = WordHandler(buffer, tmp_buf, pivot=9)
-        w.handle()
+        hpn = Hyphenator(buffer, tmp_buf, pivot=9)
+        hpn.work()
 
         assert buffer == [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', '-']
         assert list(tmp_buf) == ['л', 'е', 'р', ';']

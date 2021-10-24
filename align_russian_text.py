@@ -12,11 +12,12 @@
 
 
 import sys
+import argparse
 from typing import Deque, List
 from collections import deque
 from dataclasses import dataclass
 from functools import reduce
-import argparse
+from enum import Enum
 
 
 VOWELS = "аиеёоуыэюяАИЕЁОУЫЭЮЯ"
@@ -32,7 +33,14 @@ DEFAULT_PIVOT = -1
 DEFAULT_TERM_SIZE = 80
 
 
+class WorkMode(Enum):
+    TEXT = 0
+    WORD = 1
+
+
 # all gramatic rules taken from https://rosuchebnik.ru/material/pravila-perenosa-slov-v-russkom-yazyke-nachalka/
+
+
 def vowels_and_consonats(left: List[str], right: List[str]):
     for part in (left, right):
         set_part = set(part)
@@ -85,31 +93,31 @@ GRAMMATICAL_RULES = {
 
 
 @dataclass
-class WordHandler:
+class Hyphenator:
     buffer: List[str]
     tmp_buf: Deque
     pivot: int
     word_begin: int = -1
 
-    def handle(self):
+    def work(self):
         self._calc_word_begin()
 
-        can_be_transitted = False
+        can_be_hyphenated = False
         while (self.pivot - self.word_begin) > 1:
             left = self.buffer[self.word_begin:self.pivot]
             right = self.buffer[self.pivot:]
 
-            can_be_transitted = reduce(
+            can_be_hyphenated = reduce(
                 (lambda res, rule: res and rule(left, right)),
                 GRAMMATICAL_RULES.values(), True)
 
-            if can_be_transitted:
+            if can_be_hyphenated:
                 break
 
             self.pivot -= 1
 
-        if can_be_transitted:
-            self._transit_word()
+        if can_be_hyphenated:
+            self._hyphenate()
         else:
             self._move_whole_word()
 
@@ -132,10 +140,22 @@ class WordHandler:
         self._append_tmp_buffer(self.buffer[self.word_begin:])
         self.buffer[self.word_begin:] = []
 
-    def _transit_word(self):
+    def _hyphenate(self):
         self._append_tmp_buffer(self.buffer[self.pivot:])
         self.buffer[self.pivot:] = []
         self.buffer.append("-")
+
+
+class WordHandler:
+    def __init__(self) -> None:
+        self.buffer = []
+        self.tmp_buf = deque()
+
+    def work(self, ch: str):
+        pass
+
+    def eof(self):
+        pass
 
 
 class TextHandler:
@@ -175,7 +195,7 @@ class TextHandler:
 
         self.tmp_buf.append(ch)
 
-        WordHandler(self.buffer, self.tmp_buf, self.pivot).handle()
+        Hyphenator(self.buffer, self.tmp_buf, self.pivot).work()
         self.need_to_write = True
 
     def _handle_char(self, ch):
@@ -206,13 +226,20 @@ class TextHandler:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--term_size', type=int, help="Terminal size")
+    parser.add_argument('-m', '--work_mode', type=int, default=0, help="Work mode. 0 - text mode, 1 - word mode")
     args = parser.parse_args()
 
     term_size = args.term_size if args.term_size else DEFAULT_TERM_SIZE
     if term_size < MIN_TERM_SIZE:
         raise Exception(f"The term size has to be at least {MIN_TERM_SIZE}")
 
-    h = TextHandler(term_size)
+    work_mode = WorkMode.WORD if args.work_mode == 1 else WorkMode.TEXT
+
+    if work_mode == WorkMode.TEXT:
+        h = TextHandler(term_size)
+    else:
+        h = WordHandler()
+
     for line in sys.stdin:
         for ch in line:
             if ch == "\n":
