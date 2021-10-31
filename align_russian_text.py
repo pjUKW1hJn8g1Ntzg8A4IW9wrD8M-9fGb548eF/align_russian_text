@@ -92,6 +92,27 @@ GRAMMATICAL_RULES = {
 }
 
 
+def hyphenation(buffer: List[str], pivot: int, find_all=False) -> List[int]:
+    result = []
+
+    while pivot >= 2:
+        left = buffer[0:pivot]
+        right = buffer[pivot:]
+
+        can_be_hyphenated = reduce(
+            (lambda res, rule: res and rule(left, right)),
+            GRAMMATICAL_RULES.values(), True)
+
+        if can_be_hyphenated:
+            result.append(pivot)
+            if not find_all:
+                break
+
+        pivot -= 1
+
+    return result
+
+
 @dataclass
 class Hyphenator:
     buffer: List[str]
@@ -149,13 +170,36 @@ class Hyphenator:
 class WordHandler:
     def __init__(self) -> None:
         self.buffer = []
-        self.tmp_buf = deque()
+
+    def _clean_up(self):
+        self.buffer[:] = []
+
+    def _write(self, hyphens: List[int]):
+        if hyphens:
+            for hyphen in hyphens:
+                self.buffer = self.buffer[0:hyphen] + ['-'] + self.buffer[hyphen:]
+
+        print("".join(self.buffer))
+
+    def _handle(self):
+        if len(self.buffer) == 0:
+            return
+
+        pivot = len(self.buffer) - 2
+        hyphens = hyphenation(self.buffer, pivot, find_all=True)
+
+        self._write(hyphens)
+        self._clean_up()
 
     def work(self, ch: str):
-        pass
+        if ch in ALPHABET:
+            self.buffer.append(ch)
+            return
+
+        self._handle()
 
     def eof(self):
-        pass
+        self._handle()
 
 
 class TextHandler:
