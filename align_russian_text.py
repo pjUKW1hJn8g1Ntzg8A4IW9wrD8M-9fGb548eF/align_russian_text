@@ -41,7 +41,7 @@ class WorkMode(Enum):
 # all gramatic rules taken from https://rosuchebnik.ru/material/pravila-perenosa-slov-v-russkom-yazyke-nachalka/
 
 
-def vowels_and_consonats(left: List[str], right: List[str]):
+def vowels_and_consonats(left: List[str], right: List[str]) -> bool:
     for part in (left, right):
         set_part = set(part)
         check_res = SET_VOWELS.intersection(set_part) and SET_CONSONANT.intersection(set_part)
@@ -51,7 +51,7 @@ def vowels_and_consonats(left: List[str], right: List[str]):
     return True
 
 
-def special_symbols(left: List[str], right: List[str]):
+def special_symbols(left: List[str], right: List[str]) -> bool:
     if right[0].lower() == "ы":
         return False
 
@@ -61,7 +61,7 @@ def special_symbols(left: List[str], right: List[str]):
     return True
 
 
-def common_symbols(left: List[str], right: List[str]):
+def common_symbols(left: List[str], right: List[str]) -> bool:
     # двойная согласная. Разрешено. Например, пропел-лер
     if left[-1] in CONSONANTS and left[-1] == right[0]:
         return True
@@ -98,21 +98,52 @@ def _can_be_hyphenated(left: List[str], right: List[str]) -> bool:
         GRAMMATICAL_RULES.values(), True)
 
 
-def hyphenation(buffer: List[str], pivot: int, find_all=False) -> List[int]:
-    result = []
+class WordHandler:
+    def __init__(self) -> None:
+        self.buffer = []
 
-    while pivot >= 2:
-        left = buffer[0:pivot]
-        right = buffer[pivot:]
+    def _clean_up(self):
+        self.buffer[:] = []
 
-        if _can_be_hyphenated(left, right):
-            result.append(pivot)
-            if not find_all:
-                break
+    def _write(self):
+        print("".join(self.buffer))
 
-        pivot -= 1
+    def _hyphenation(self, pivot: int) -> List[int]:
+        result = []
 
-    return result
+        while pivot >= 2:
+            left = self.buffer[0:pivot]
+            right = self.buffer[pivot:]
+
+            if _can_be_hyphenated(left, right):
+                result.append(pivot)
+
+            pivot -= 1
+
+        return result
+
+    def _handle(self):
+        if len(self.buffer) == 0:
+            return
+
+        pivot = len(self.buffer) - 2
+        hyphens = self._hyphenation(pivot)
+
+        for hyphen in hyphens:
+            self.buffer = self.buffer[0:hyphen] + ['-'] + self.buffer[hyphen:]
+
+        self._write()
+        self._clean_up()
+
+    def work(self, ch: str):
+        if ch in ALPHABET:
+            self.buffer.append(ch)
+            return
+
+        self._handle()
+
+    def eof(self):
+        self._handle()
 
 
 @dataclass
@@ -164,55 +195,6 @@ class TextHyphenator:
         self._append_tmp_buffer(self.buffer[self.pivot:])
         self.buffer[self.pivot:] = []
         self.buffer.append("-")
-
-
-class WordHandler:
-    def __init__(self) -> None:
-        self.buffer = []
-
-    def _clean_up(self):
-        self.buffer[:] = []
-
-    def _write(self, hyphens: List[int]):
-        if hyphens:
-            for hyphen in hyphens:
-                self.buffer = self.buffer[0:hyphen] + ['-'] + self.buffer[hyphen:]
-
-        print("".join(self.buffer))
-
-    def _hyphenation(self, pivot: int) -> List[int]:
-        result = []
-
-        while pivot >= 2:
-            left = self.buffer[0:pivot]
-            right = self.buffer[pivot:]
-
-            if _can_be_hyphenated(left, right):
-                result.append(pivot)
-
-            pivot -= 1
-
-        return result
-
-    def _handle(self):
-        if len(self.buffer) == 0:
-            return
-
-        pivot = len(self.buffer) - 2
-        hyphens = self._hyphenation(pivot)
-
-        self._write(hyphens)
-        self._clean_up()
-
-    def work(self, ch: str):
-        if ch in ALPHABET:
-            self.buffer.append(ch)
-            return
-
-        self._handle()
-
-    def eof(self):
-        self._handle()
 
 
 class TextHandler:

@@ -1,6 +1,6 @@
 
 from collections import deque
-from align_russian_text import TextHandler, TextHyphenator, DEFAULT_PIVOT, hyphenation
+from align_russian_text import TextHandler, TextHyphenator, WordHandler, DEFAULT_PIVOT
 from align_russian_text import vowels_and_consonats, special_symbols, common_symbols
 
 
@@ -122,7 +122,9 @@ class TestTextHandler:
     class TestDecideWhatToDo:
         def test_char_is_letter(self):
             h = TextHandler(term_size=10)
-            h.buffer.extend([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л'])
+            h.buffer.extend(['и', ',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л'])
+
+            assert h.enough_space is False
 
             h._decide_what_to_do('е')
             assert h.need_to_write is False
@@ -168,20 +170,24 @@ class TestTextHandler:
 class TestWordHandler:
     class TestHyphenation:
         def test_no_hyphens(self):
-            b = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
-            res = hyphenation(b, 2)
+            w = WordHandler()
+            w.buffer = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+            res = w._hyphenation(2)
 
             assert res == []
 
-        def test_find_one(self):
-            b = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
-            res = hyphenation(b, 8)
-
-            assert res == [6]
-
         def test_find_all(self):
-            b = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
-            res = hyphenation(b, 8, find_all=True)
+            w = WordHandler()
+            w.buffer = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+            res = w._hyphenation(8)
 
             assert len(res) > 1
             assert res[0] == 6
+
+        def test_find_no_one(self):
+            w = WordHandler()
+            w.buffer = ['л', 'и', 'с', 'т']
+            assert w._hyphenation(3) == []
+
+            w.buffer = ['ю', 'л', 'а']
+            assert w._hyphenation(2) == []
