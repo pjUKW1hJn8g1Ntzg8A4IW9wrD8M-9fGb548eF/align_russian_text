@@ -1,7 +1,6 @@
 
 from collections import deque
-from align_russian_text import TextHandler, Hyphenator, DEFAULT_PIVOT
-from align_russian_text import GRAMMATICAL_RULES, ALPHABET, VOWELS, CONSONANTS
+from align_russian_text import TextHandler, TextHyphenator, DEFAULT_PIVOT, hyphenation
 from align_russian_text import vowels_and_consonats, special_symbols, common_symbols
 
 
@@ -34,9 +33,9 @@ class TestGrammaticRules:
         assert common_symbols(['п', 'р', 'о', 'с'], ['м', 'о', 'т', 'р']) is True
 
 
-class TestHyphenator:
+class TestTextHyphenator:
     def test_calc_word_begin(self):
-        hpn = Hyphenator([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), pivot=3)
+        hpn = TextHyphenator([',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р'], deque(), pivot=3)
 
         assert hpn.word_begin == -1
         hpn._calc_word_begin()
@@ -46,7 +45,7 @@ class TestHyphenator:
     def test_move_whole_word(self):
         buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
         tmp_buf = deque()
-        hpn = Hyphenator(buffer, tmp_buf, pivot=3)
+        hpn = TextHyphenator(buffer, tmp_buf, pivot=3)
         hpn._calc_word_begin()
 
         assert len(hpn.tmp_buf) == 0
@@ -60,7 +59,7 @@ class TestHyphenator:
         tmp_buf = deque()
         tmp_buf.append(".")
 
-        hpn = Hyphenator(buffer, tmp_buf, pivot=8)
+        hpn = TextHyphenator(buffer, tmp_buf, pivot=8)
         hpn._calc_word_begin()
         hpn._hyphenate()
 
@@ -71,7 +70,7 @@ class TestHyphenator:
         buffer = [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
         tmp_buf = deque([';'])
 
-        hpn = Hyphenator(buffer, tmp_buf, pivot=9)
+        hpn = TextHyphenator(buffer, tmp_buf, pivot=9)
         hpn.work()
 
         assert buffer == [',', ' ', 'п', 'р', 'о', 'п', 'е', 'л', '-']
@@ -164,3 +163,25 @@ class TestTextHandler:
 
     def test_handle(self):
         pass
+
+
+class TestWordHandler:
+    class TestHyphenation:
+        def test_no_hyphens(self):
+            b = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+            res = hyphenation(b, 2)
+
+            assert res == []
+
+        def test_find_one(self):
+            b = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+            res = hyphenation(b, 8)
+
+            assert res == [6]
+
+        def test_find_all(self):
+            b = ['п', 'р', 'о', 'п', 'е', 'л', 'л', 'е', 'р']
+            res = hyphenation(b, 8, find_all=True)
+
+            assert len(res) > 1
+            assert res[0] == 6
