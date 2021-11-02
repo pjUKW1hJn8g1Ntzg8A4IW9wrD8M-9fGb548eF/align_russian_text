@@ -92,6 +92,12 @@ GRAMMATICAL_RULES = {
 }
 
 
+def _can_be_hyphenated(left: List[str], right: List[str]) -> bool:
+    return reduce(
+        (lambda res, rule: res and rule(left, right)),
+        GRAMMATICAL_RULES.values(), True)
+
+
 def hyphenation(buffer: List[str], pivot: int, find_all=False) -> List[int]:
     result = []
 
@@ -99,11 +105,7 @@ def hyphenation(buffer: List[str], pivot: int, find_all=False) -> List[int]:
         left = buffer[0:pivot]
         right = buffer[pivot:]
 
-        can_be_hyphenated = reduce(
-            (lambda res, rule: res and rule(left, right)),
-            GRAMMATICAL_RULES.values(), True)
-
-        if can_be_hyphenated:
+        if _can_be_hyphenated(left, right):
             result.append(pivot)
             if not find_all:
                 break
@@ -114,7 +116,7 @@ def hyphenation(buffer: List[str], pivot: int, find_all=False) -> List[int]:
 
 
 @dataclass
-class Hyphenator:
+class TextHyphenator:
     buffer: List[str]
     tmp_buf: Deque
     pivot: int
@@ -128,10 +130,7 @@ class Hyphenator:
             left = self.buffer[self.word_begin:self.pivot]
             right = self.buffer[self.pivot:]
 
-            can_be_hyphenated = reduce(
-                (lambda res, rule: res and rule(left, right)),
-                GRAMMATICAL_RULES.values(), True)
-
+            can_be_hyphenated = _can_be_hyphenated(left, right)
             if can_be_hyphenated:
                 break
 
@@ -181,12 +180,26 @@ class WordHandler:
 
         print("".join(self.buffer))
 
+    def _hyphenation(self, pivot: int) -> List[int]:
+        result = []
+
+        while pivot >= 2:
+            left = self.buffer[0:pivot]
+            right = self.buffer[pivot:]
+
+            if _can_be_hyphenated(left, right):
+                result.append(pivot)
+
+            pivot -= 1
+
+        return result
+
     def _handle(self):
         if len(self.buffer) == 0:
             return
 
         pivot = len(self.buffer) - 2
-        hyphens = hyphenation(self.buffer, pivot, find_all=True)
+        hyphens = self._hyphenation(pivot)
 
         self._write(hyphens)
         self._clean_up()
@@ -227,7 +240,7 @@ class TextHandler:
     def _decide_what_to_do(self, ch: str):
         if ch in ALPHABET:
             if self.pivot == DEFAULT_PIVOT:
-                self.pivot = len(self.buffer)
+                self.pivot = len(self.buffer) - 1
             self.buffer.append(ch)
             return
 
@@ -239,7 +252,7 @@ class TextHandler:
 
         self.tmp_buf.append(ch)
 
-        Hyphenator(self.buffer, self.tmp_buf, self.pivot).work()
+        TextHyphenator(self.buffer, self.tmp_buf, self.pivot).work()
         self.need_to_write = True
 
     def _handle_char(self, ch):
